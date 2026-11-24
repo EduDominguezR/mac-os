@@ -1,0 +1,1 @@
+Objetivo de memoria privada en reposo: 25-35 MB.

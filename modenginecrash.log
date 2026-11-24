@@ -1,0 +1,95 @@
+SymInit: Symbol-SearchPath: '.;C:\Users\reyes\OneDrive\Documentos\Proyecto predeterminado\macdock-main;D:\games\GAMES\Sekiro Shadows Die Twice;C:\WINDOWS;C:\WINDOWS\system32;SRV*C:\websymbols*http://msdl.microsoft.com/download/symbols;', symOptions: 530, UserName: 'reyes'
+OS-Version: 6.2.9200 () 0x100-0x1
+D:\games\GAMES\Sekiro Shadows Die Twice\sekiro.exe:sekiro.exe (0000000140000000), size: 70066176 (result: 0), SymType: '-exported-', PDB: 'D:\games\GAMES\Sekiro Shadows Die Twice\sekiro.exe', fileVersion: 1.6.0.0
+C:\WINDOWS\SYSTEM32\ntdll.dll:ntdll.dll (00007FF9F3110000), size: 2539520 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\ntdll.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\System32\KERNEL32.DLL:KERNEL32.DLL (00007FF9F1C40000), size: 831488 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\KERNEL32.DLL', fileVersion: 6.2.26100.9974
+C:\WINDOWS\System32\KERNELBASE.dll:KERNELBASE.dll (00007FF9F0660000), size: 4231168 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\KERNELBASE.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\SYSTEM32\apphelp.dll:apphelp.dll (00007FF9EA2D0000), size: 651264 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\apphelp.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\System32\WS2_32.dll:WS2_32.dll (00007FF9F1A90000), size: 524288 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\WS2_32.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\System32\ucrtbase.dll:ucrtbase.dll (00007FF9F02B0000), size: 1359872 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\ucrtbase.dll', fileVersion: 6.2.26100.9711
+C:\WINDOWS\System32\RPCRT4.dll:RPCRT4.dll (00007FF9F1B20000), size: 1146880 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\RPCRT4.dll', fileVersion: 6.2.26100.9974
+D:\games\GAMES\Sekiro Shadows Die Twice\steam_api64.dll:steam_api64.dll (00007FF9C8480000), size: 1048576 (result: 0), SymType: '-exported-', PDB: 'D:\games\GAMES\Sekiro Shadows Die Twice\steam_api64.dll', fileVersion: 1.0.1.31
+C:\WINDOWS\SYSTEM32\dxgi.dll:dxgi.dll (00007FF9EA860000), size: 1323008 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\dxgi.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\System32\WLDAP32.dll:WLDAP32.dll (00007FF9F2E20000), size: 466944 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\WLDAP32.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\System32\msvcp_win.dll:msvcp_win.dll (00007FF9F0A70000), size: 667648 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\msvcp_win.dll', fileVersion: 6.2.26100.9711
+C:\WINDOWS\System32\PSAPI.DLL:PSAPI.DLL (00007FF9F30C0000), size: 32768 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\PSAPI.DLL', fileVersion: 6.2.26100.8521
+C:\WINDOWS\System32\CRYPT32.dll:CRYPT32.dll (00007FF9F04D0000), size: 1564672 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\CRYPT32.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\System32\SHELL32.dll:SHELL32.dll (00007FF9F1D10000), size: 8060928 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\SHELL32.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\System32\win32u.dll:win32u.dll (00007FF9F0C70000), size: 159744 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\win32u.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\System32\ADVAPI32.dll:ADVAPI32.dll (00007FF9F2D50000), size: 770048 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\ADVAPI32.dll', fileVersion: 6.2.26100.9974
+D:\games\GAMES\Sekiro Shadows Die Twice\amd_ags_x64.dll:amd_ags_x64.dll (00007FF9E53F0000), size: 131072 (result: 0), SymType: '-exported-', PDB: 'D:\games\GAMES\Sekiro Shadows Die Twice\amd_ags_x64.dll', fileVersion: 5.0.5.0
+C:\WINDOWS\System32\USER32.dll:USER32.dll (00007FF9F2A60000), size: 1957888 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\USER32.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\System32\msvcrt.dll:msvcrt.dll (00007FF9F1950000), size: 692224 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\msvcrt.dll', fileVersion: 7.0.26100.9711
+C:\WINDOWS\System32\sechost.dll:sechost.dll (00007FF9F25F0000), size: 688128 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\sechost.dll', fileVersion: 6.2.26100.9818
+D:\games\GAMES\Sekiro Shadows Die Twice\fmodex64.dll:fmodex64.dll (00007FF995DE0000), size: 1957888 (result: 0), SymType: '-exported-', PDB: 'D:\games\GAMES\Sekiro Shadows Die Twice\fmodex64.dll', fileVersion: 0.4.44.61
+C:\WINDOWS\System32\GDI32.dll:GDI32.dll (00007FF9F3090000), size: 176128 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\GDI32.dll', fileVersion: 6.2.26100.8328
+C:\WINDOWS\System32\gdi32full.dll:gdi32full.dll (00007FF9F0CA0000), size: 1216512 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\gdi32full.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\System32\ole32.dll:ole32.dll (00007FF9F13C0000), size: 1675264 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\ole32.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\System32\combase.dll:combase.dll (00007FF9F1560000), size: 3821568 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\combase.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\System32\SHLWAPI.dll:SHLWAPI.dll (00007FF9F2C50000), size: 425984 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\SHLWAPI.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\System32\OLEAUT32.dll:OLEAUT32.dll (00007FF9F24D0000), size: 892928 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\OLEAUT32.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\System32\IMM32.dll:IMM32.dll (00007FF9F25B0000), size: 200704 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\IMM32.dll', fileVersion: 6.2.26100.9818
+D:\games\GAMES\Sekiro Shadows Die Twice\fmod_event64.dll:fmod_event64.dll (00007FF9AEFF0000), size: 585728 (result: 0), SymType: '-exported-', PDB: 'D:\games\GAMES\Sekiro Shadows Die Twice\fmod_event64.dll', fileVersion: 0.4.44.61
+D:\games\GAMES\Sekiro Shadows Die Twice\oo2core_6_win64.dll:oo2core_6_win64.dll (00007FF986230000), size: 1105920 (result: 0), SymType: '-exported-', PDB: 'D:\games\GAMES\Sekiro Shadows Die Twice\oo2core_6_win64.dll'
+C:\WINDOWS\SYSTEM32\powrprof.dll:powrprof.dll (00007FF9F0120000), size: 385024 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\powrprof.dll', fileVersion: 6.2.26100.3912
+C:\WINDOWS\SYSTEM32\WINMM.dll:WINMM.dll (00007FF9E3BE0000), size: 221184 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\WINMM.dll', fileVersion: 6.2.26100.9818
+D:\games\GAMES\Sekiro Shadows Die Twice\bink2w64.dll:bink2w64.dll (00007FF9BCE30000), size: 409600 (result: 0), SymType: '-exported-', PDB: 'D:\games\GAMES\Sekiro Shadows Die Twice\bink2w64.dll', fileVersion: 1.100.10.0
+C:\WINDOWS\SYSTEM32\WSOCK32.dll:WSOCK32.dll (00007FF9EA1A0000), size: 40960 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\WSOCK32.dll', fileVersion: 6.2.26100.1
+C:\WINDOWS\SYSTEM32\MSACM32.dll:MSACM32.dll (00007FF9D9FC0000), size: 135168 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\MSACM32.dll', fileVersion: 6.2.26100.7019
+C:\WINDOWS\SYSTEM32\d3dx11_43.dll:d3dx11_43.dll (00007FF9C8170000), size: 286720 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\d3dx11_43.dll', fileVersion: 9.29.952.3111
+C:\WINDOWS\SYSTEM32\d3d11.dll:d3d11.dll (00007FF9E9360000), size: 2486272 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\d3d11.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\d3d9.dll:d3d9.dll (00007FF9735C0000), size: 1777664 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\d3d9.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\XINPUT1_3.dll:XINPUT1_3.dll (00007FF9D2D00000), size: 196608 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\XINPUT1_3.dll', fileVersion: 10.0.26200.1
+D:\games\GAMES\Sekiro Shadows Die Twice\DINPUT8.dll:DINPUT8.dll (0000000180000000), size: 659456 (result: 0), SymType: '-exported-', PDB: 'D:\games\GAMES\Sekiro Shadows Die Twice\DINPUT8.dll'
+C:\WINDOWS\SYSTEM32\D3DCOMPILER_43.dll:D3DCOMPILER_43.dll (00007FF9700C0000), size: 2551808 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\D3DCOMPILER_43.dll', fileVersion: 9.29.952.3111
+C:\WINDOWS\SYSTEM32\VERSION.dll:VERSION.dll (00007FF9E62D0000), size: 45056 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\VERSION.dll', fileVersion: 6.2.26100.1150
+C:\WINDOWS\SYSTEM32\dwmapi.dll:dwmapi.dll (00007FF9EA9D0000), size: 188416 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\dwmapi.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\D3DCOMPILER_47.dll:D3DCOMPILER_47.dll (00007FF9E8320000), size: 4714496 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\D3DCOMPILER_47.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\SYSTEM32\CRYPTBASE.DLL:CRYPTBASE.DLL (00007FF9EF710000), size: 49152 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\CRYPTBASE.DLL', fileVersion: 6.2.26100.9711
+C:\WINDOWS\SYSTEM32\dxcore.dll:dxcore.dll (00007FF9EA810000), size: 303104 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\dxcore.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\cryptsp.dll:cryptsp.dll (00007FF9EF8E0000), size: 110592 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\cryptsp.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\windows.storage.dll:windows.storage.dll (00007FF9EDCA0000), size: 9175040 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\windows.storage.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\System32\SHCORE.dll:SHCORE.dll (00007FF9F0E30000), size: 1015808 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\SHCORE.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\UMPDC.dll:UMPDC.dll (00007FF9F0100000), size: 86016 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\UMPDC.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\system32\dinput8.dll:dinput8.dll (00007FF9D5BC0000), size: 307200 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\system32\dinput8.dll', fileVersion: 6.2.26100.8521
+C:\WINDOWS\SYSTEM32\inputhost.dll:inputhost.dll (00007FF9D4C90000), size: 2007040 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\inputhost.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\CoreMessaging.dll:CoreMessaging.dll (00007FF9E9DA0000), size: 1232896 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\CoreMessaging.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\System32\bcryptPrimitives.dll:bcryptPrimitives.dll (00007FF9F0410000), size: 704512 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\bcryptPrimitives.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\SYSTEM32\kernel.appcore.dll:kernel.appcore.dll (00007FF9EEF10000), size: 110592 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\kernel.appcore.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\SspiCli.dll:SspiCli.dll (00007FF9EF1D0000), size: 303104 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\SspiCli.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\directxdatabasehelper.dll:directxdatabasehelper.dll (00007FF9E5DC0000), size: 389120 (result: 0), SymType: '-nosymbols-', PDB: 'C:\WINDOWS\SYSTEM32\directxdatabasehelper.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\cfgmgr32.dll:cfgmgr32.dll (00007FF9EFE00000), size: 335872 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\cfgmgr32.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\system32\IconCodecService.dll:IconCodecService.dll (00007FF9C3C30000), size: 45056 (result: 0), SymType: '-nosymbols-', PDB: 'C:\WINDOWS\system32\IconCodecService.dll', fileVersion: 6.2.26100.1
+C:\WINDOWS\SYSTEM32\WindowsCodecs.dll:WindowsCodecs.dll (00007FF9E87D0000), size: 2347008 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\WindowsCodecs.dll', fileVersion: 6.2.26100.9974
+C:\WINDOWS\system32\uxtheme.dll:uxtheme.dll (00007FF9EA710000), size: 696320 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\system32\uxtheme.dll', fileVersion: 6.2.26100.9818
+C:\WINDOWS\SYSTEM32\dbghelp.dll:dbghelp.dll (00007FF9ED7B0000), size: 2408448 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\dbghelp.dll', fileVersion: 6.2.26100.9818
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 00000001419DCA99)
+00000001419DCA99 (sekiro): (filename not available): Scaleform::Render::Matrix2x4<float>::TransformByInverse
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 00000001419DC8B8)
+00000001419DC8B8 (sekiro): (filename not available): Scaleform::Render::Matrix2x4<float>::TransformByInverse
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 00000001406E0EA8)
+00000001406E0EA8 (sekiro): (filename not available): Scaleform::Render::Matrix4x4<float>::SetIdentity
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 000000014072C5BC)
+000000014072C5BC (sekiro): (filename not available): Scaleform::Render::Matrix4x4<float>::SetIdentity
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 000000014072BD04)
+000000014072BD04 (sekiro): (filename not available): Scaleform::Render::Matrix4x4<float>::SetIdentity
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 000000014267ABB5)
+000000014267ABB5 (sekiro): (filename not available): Scaleform::Render::Matrix2x4<float>::GetMaxScale
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 000000014267AEB0)
+000000014267AEB0 (sekiro): (filename not available): Scaleform::Render::Matrix2x4<float>::GetMaxScale
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 000000014262CB02)
+000000014262CB02 (sekiro): (filename not available): Scaleform::Render::Matrix2x4<float>::GetMaxScale
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 00000001425FB7EE)
+00000001425FB7EE (sekiro): (filename not available): Scaleform::Render::Matrix2x4<float>::GetMaxScale
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 0000000141194FB5)
+0000000141194FB5 (sekiro): (filename not available): Scaleform::Render::Matrix2x4<float>::TransformByInverse
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 00000001411E4106)
+00000001411E4106 (sekiro): (filename not available): Scaleform::Render::Matrix2x4<float>::TransformByInverse
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 00000001411E439C)
+00000001411E439C (sekiro): (filename not available): Scaleform::Render::Matrix2x4<float>::TransformByInverse
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 000000014235A237)
+000000014235A237 (sekiro): (filename not available): Scaleform::Render::Matrix2x4<float>::GetMaxScale
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 00007FF9F1C6DDA7)
+00007FF9F1C6DDA7 (KERNEL32): (filename not available): BaseThreadInitThunk
+ERROR: SymGetLineFromAddr64, GetLastError: 487 (Address: 00007FF9F31D9C5C)
+00007FF9F31D9C5C (ntdll): (filename not available): RtlUserThreadStart
