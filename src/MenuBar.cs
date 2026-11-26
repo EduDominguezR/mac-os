@@ -19,6 +19,7 @@ namespace MacDock
         float s; bool light;
         int W, H, X, Y;
         bool full, appBarOn, autoHide, autoHidden, menuOpen;
+        public bool MenuOpen { get { return menuOpen; } }
         float slide = 0f, slideTarget = 0f;
         int appBarMsg;
         DateTime autoLeaveAt = DateTime.MaxValue;

@@ -169,6 +169,8 @@ namespace MacDock
         public bool AnimVentanas  = false;   // interruptor general de animaciones de ventana
         public bool AnimAbrirScale  = true;  // apertura scale
         public bool AnimMinGenie    = true;  // minimizacion genie
+        public int AnimGenieVel = -1;
+        public bool VistaPrevia = true;
         public bool AnimCerrarScale = true;  // cierre scale+fade
         public bool Magnify = true;
         public bool Diagnostico = false;   // logs de diagnostico (duplicados, barra visible); 0 por defecto
@@ -197,6 +199,8 @@ namespace MacDock
                 else if (k == "animventanas") { AnimVentanas = v == "1"; haveMaster = true; }
                 else if (k == "animabrirscale")  AnimAbrirScale  = v == "1";
                 else if (k == "animmingenie")    AnimMinGenie    = v == "1";
+                else if (k == "animgenievel" && int.TryParse(v, out i) && i >= 0 && i <= 2) AnimGenieVel = i;
+                else if (k == "vistaprevia") VistaPrevia = v == "1";
                 else if (k == "animcerrarscale") AnimCerrarScale = v == "1";
                 else if (k == "animcerrascale")  AnimCerrarScale = v == "1";   // variante antigua mal escrita
                 else if (k == "diagnostico") Diagnostico = v == "1";
@@ -250,6 +254,8 @@ namespace MacDock
                     "AnimVentanas=" + (AnimVentanas ? 1 : 0) + "\r\n" +
                     "AnimAbrirScale=" + (AnimAbrirScale ? 1 : 0) + "\r\n" +
                     "AnimMinGenie=" + (AnimMinGenie ? 1 : 0) + "\r\n" +
+                    (AnimGenieVel < 0 ? "" : "AnimGenieVel=" + AnimGenieVel + "\r\n") +
+                    "VistaPrevia=" + (VistaPrevia ? 1 : 0) + "\r\n" +
                     "AnimCerrarScale=" + (AnimCerrarScale ? 1 : 0) + "\r\n" +
                     "Diagnostico=" + (Diagnostico ? 1 : 0) + "\r\n");
             }
@@ -306,6 +312,17 @@ namespace MacDock
         int appBarMsg, taskbarCreatedMsg;
 
         DockItem pressItem; Point pressPt; bool dragging;
+        DockItem previewItem;
+        static readonly UIntPtr PreviewTimerId = new UIntPtr(0x4D50);
+        bool previewHover;
+        long previewDeadline;
+        volatile DockPreview preview;
+        IntPtr previewHwnd;
+        IntPtr previewForeground;
+        Rectangle previewAnchor;
+        long previewCrossingUntil;
+        bool sessionWatch;
+        Point? previewDismissedAt;
         Point lastCursor; float lastMag = -1; int stillFrames;
         float magX = -1f; bool wasInside;
         System.Windows.Forms.Timer edge = new System.Windows.Forms.Timer();
@@ -467,6 +484,7 @@ namespace MacDock
 
         void DesktopMenuAt(Point pt)
         {
+            ClosePreview();
             string desk = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             var m = NewMenu();
             // estilo Mac
@@ -856,6 +874,7 @@ namespace MacDock
 
         void ShowTray(Point anchor)
         {
+            ClosePreview();
             try
             {
                 if (fullApp) return;
@@ -1283,10 +1302,11 @@ namespace MacDock
             Directory.CreateDirectory(Program.DataDir);
             DisplayBrightness.Init();
             ControlCenter.FullscreenBlock = () => fullApp;
-            ControlCenter.Diag = () => cfg.Diagnostico;
             appsDir = Path.Combine(Program.DataDir, "Apps");
             orderFile = Path.Combine(Program.DataDir, "order.txt");
             cfg = new Config(Path.Combine(Program.DataDir, "config.ini"));
+            ControlCenter.Diag = () => cfg.Diagnostico;
+            PowerActions.Diag = () => cfg.Diagnostico;
             appBarMsg = N.RegisterWindowMessage("MacDockAppBarMsg");
             taskbarCreatedMsg = N.RegisterWindowMessage("TaskbarCreated");
             sfCenter = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
@@ -1323,7 +1343,7 @@ namespace MacDock
             if (s <= 0) s = 1f;
             ReadTheme();
             prefHandler = (o, a) => { ReadTheme(); Render(); if (bar != null) bar.SetTheme(light); };
-            dispHandler = (o, a) => BeginInvoke(new Action(() => { Relayout(); if (appBarOn) SetAppBarPos(); if (bar != null) bar.OnDisplayChanged(); CheckFullscreen(); }));
+            dispHandler = (o, a) => BeginInvoke(new Action(() => { ClosePreview(); UpdateDockScale(); Relayout(); if (appBarOn) SetAppBarPos(); if (bar != null) bar.OnDisplayChanged(); CheckFullscreen(); }));
             powerHandler = (o, a) => BeginInvoke(new Action(() => { lastPower = (PowerLineStatus)(-1); refreshCheckAt = DateTime.Now.AddSeconds(2); }));
             SystemEvents.UserPreferenceChanged += prefHandler;
             SystemEvents.DisplaySettingsChanged += dispHandler;
@@ -1974,6 +1994,26 @@ namespace MacDock
                 }
             }
             Point c = Cursor.Position;
+            if (preview != null && preview.IsUnderPointer(c))
+            {
+                previewCrossingUntil = 0;
+                fast.Stop();
+                return;
+            }
+            if (preview != null && InPreviewApproach(c))
+            {
+                if (N.WindowFromPoint(new N.POINT { x = c.X, y = c.Y }) == Handle)
+                {
+                    previewCrossingUntil = 0;
+                    fast.Stop();
+                    return;
+                }
+                if (previewCrossingUntil == 0)
+                    previewCrossingUntil = stamp + Stopwatch.Frequency / 5;
+                if (stamp < previewCrossingUntil) return;
+                previewDismissedAt = c;
+                ClosePreview();
+            }
             float mx = c.X - winX, my = c.Y - (winY + SlidePx);
             float left = all[0].X - PadX, right = all[all.Count - 1].X + all[all.Count - 1].W + PadX;
             float topZone = BarTop - (mag > 0.05f ? Ic * (MaxMag - 1f) : 0f);
@@ -2003,6 +2043,7 @@ namespace MacDock
             }
             stillFrames = 0;
             DoLayout(lastMx, mag);
+            if (cfg.VistaPrevia) TrackPreview(c);
             Render();
             if (!inside && mag == 0f && !bouncing && !dragging && slide == slideTarget)
             {
@@ -2320,10 +2361,130 @@ namespace MacDock
         }
 
         // ---------- mouse ----------
+        bool PreviewBlocked()
+        {
+            return restored || !cfg.VistaPrevia || fullApp || !DockShown || slide > 0.01f ||
+                menuOpen || (bar != null && bar.MenuOpen) || trayWnd != IntPtr.Zero ||
+                (trayWait != null && trayWait.Enabled) || stackPopup != null ||
+                ControlCenter.Current != null || dragging || pressItem != null;
+        }
+
+        Rectangle PreviewIcon(DockItem item)
+        {
+            float size = Ic * item.Scale;
+            return Rectangle.Round(new RectangleF(winX + item.X + (item.W - size) / 2,
+                winY + SlidePx + BarTop + PadY + Ic - size - Bounce(item), size, size));
+        }
+
+        DockItem PreviewHit(Point cursor)
+        {
+            if (PreviewBlocked()) return null;
+            int i = HitIndex(cursor.X - winX);
+            if (i < 0) return null;
+            var item = all[i];
+            return item.Kind == Kind.App && item.Running && PreviewIcon(item).Contains(cursor) ? item : null;
+        }
+
+        void TrackPreview(Point cursor)
+        {
+            if (!cfg.VistaPrevia) return;
+            if (preview != null && (preview.IsUnderPointer(cursor) || InPreviewApproach(cursor))) return;
+            if (previewDismissedAt == cursor) return;
+            previewDismissedAt = null;
+            var item = PreviewHit(cursor);
+            if (item == previewItem) return;
+            int delay = preview != null ? 120 : 400;
+            ClosePreview();
+            if (item == null || N.WindowFromPoint(new N.POINT { x = cursor.X, y = cursor.Y }) != Handle) return;
+            previewItem = item;
+            previewForeground = N.GetForegroundWindow();
+            previewDeadline = Stopwatch.GetTimestamp() + Stopwatch.Frequency * delay / 1000;
+            previewHover = N.SetTimer(Handle, PreviewTimerId, (uint)delay, IntPtr.Zero) != UIntPtr.Zero;
+            if (!previewHover) previewItem = null;
+        }
+
+        void StopPreviewHover()
+        {
+            if (!previewHover) return;
+            previewHover = false;
+            if (IsHandleCreated) N.KillTimer(Handle, PreviewTimerId);
+        }
+
+        void ShowPreview()
+        {
+            StopPreviewHover();
+            Point cursor = Cursor.Position;
+            if (previewItem == null || PreviewHit(cursor) != previewItem ||
+                N.WindowFromPoint(new N.POINT { x = cursor.X, y = cursor.Y }) != Handle ||
+                N.GetForegroundWindow() != previewForeground || FindOverflow(true) != IntPtr.Zero)
+            {
+                ClosePreview();
+                return;
+            }
+            try
+            {
+                previewAnchor = PreviewIcon(previewItem);
+                preview = new DockPreview(previewItem, previewAnchor, s, h =>
+                {
+                    ClosePreview();
+                    Focus(h);
+                }, () => { ClosePreview(); StartAnim(); }, p =>
+                {
+                    StartAnim();
+                    return InPreviewApproach(p) || (previewItem != null && PreviewHit(p) == previewItem);
+                });
+                if (preview.IsEmpty) ClosePreview();
+                else
+                {
+                    if (!sessionWatch) sessionWatch = N.WTSRegisterSessionNotification(Handle, 0);
+                    Interlocked.Exchange(ref previewHwnd, preview.Handle);
+                    preview.Show();
+                    if (cfg.Diagnostico) Program.Log("Vista previa: visible " + preview.Text +
+                        " " + preview.Bounds + " foco=" + (previewForeground == N.GetForegroundWindow()));
+                }
+            }
+            catch (Exception ex) { ClosePreview(); Program.Log(ex); }
+        }
+
+        void ClosePreview()
+        {
+            StopPreviewHover();
+            previewItem = null;
+            previewCrossingUntil = 0;
+            var card = preview;
+            if (card == null) return;
+            preview = null;
+            card.Dispose();
+        }
+
+        void UpdateDockScale()
+        {
+            float current;
+            try { current = N.GetDpiForWindow(Handle) / 96f; } catch { current = DeviceDpi / 96f; }
+            if (current > 0) s = current;
+        }
+
+        bool InPreviewApproach(Point p)
+        {
+            return preview != null && p.X >= previewAnchor.Left && p.X < previewAnchor.Right &&
+                p.Y >= preview.Bounds.Bottom - 3 && p.Y < previewAnchor.Top + Math.Max(4, (int)(20 * s));
+        }
+
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            if (sessionWatch)
+            {
+                N.WTSUnRegisterSessionNotification(Handle);
+                sessionWatch = false;
+            }
+            base.OnHandleDestroyed(e);
+        }
+
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
             StartAnim();
+            TrackPreview(Cursor.Position);
             if (pressItem != null && e.Button == MouseButtons.Left && pressItem.Pinned)
             {
                 if (!dragging && (Math.Abs(e.X - pressPt.X) > 8 * s || Math.Abs(e.Y - pressPt.Y) > 8 * s)) dragging = true;
@@ -2341,6 +2502,8 @@ namespace MacDock
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
+            Point cursor = Cursor.Position;
+            if (preview == null || (!preview.IsUnderPointer(cursor) && !InPreviewApproach(cursor))) ClosePreview();
             // El timer puede haberse apagado con la lupa ya abierta: al salir hay que reactivarlo
             // para que la magnificacion vuelva a 1 sin esperar al timer de 120 ms.
             StartAnim();
@@ -2349,6 +2512,7 @@ namespace MacDock
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+            ClosePreview();
             int i = HitIndex(e.X);
             pressItem = i >= 0 ? all[i] : null;
             pressPt = e.Location;
@@ -2390,6 +2554,7 @@ namespace MacDock
                 AnimVentanas = cfg.AnimVentanas,
                 AnimAbrirScale = cfg.AnimAbrirScale,
                 AnimMinGenie = cfg.AnimMinGenie,
+                AnimGenieVel = cfg.AnimGenieVel,
                 AnimCerrarScale = cfg.AnimCerrarScale,
                 Diagnostico = cfg.Diagnostico
             };
@@ -2437,7 +2602,34 @@ namespace MacDock
 
             main.DropDownItems.Add(abrir);
             main.DropDownItems.Add(genie);
+            var speed = new ToolStripMenuItem(cfg.AnimGenieVel < 0
+                ? "Velocidad del Genie (original: 0,29 s)" : "Velocidad del Genie");
+            var labels = new[] { "Normal (0,50 s)", "Rápida (0,35 s)", "Muy rápida (0,25 s)" };
+            for (int i = 0; i < labels.Length; i++)
+            {
+                int value = i;
+                var option = new ToolStripMenuItem(labels[i]) { Checked = cfg.AnimGenieVel == i };
+                option.Click += (o, e) =>
+                {
+                    cfg.AnimGenieVel = value;
+                    cfg.Save();
+                    speed.Text = "Velocidad del Genie";
+                    foreach (ToolStripMenuItem entry in speed.DropDownItems) entry.Checked = entry == option;
+                    SyncAnimConfig();
+                };
+                speed.DropDownItems.Add(option);
+            }
+            main.DropDownItems.Add(speed);
             main.DropDownItems.Add(cerrar);
+            var previews = new ToolStripMenuItem("Vista previa al pasar el ratón") { Checked = cfg.VistaPrevia };
+            previews.Click += (o, e) =>
+            {
+                cfg.VistaPrevia = !cfg.VistaPrevia;
+                ClosePreview();
+                previews.Checked = cfg.VistaPrevia;
+                cfg.Save();
+            };
+            main.DropDownItems.Add(previews);
             return main;
         }
 
@@ -2587,6 +2779,7 @@ namespace MacDock
 
         void ShowMenu(DockItem it)
         {
+            ClosePreview();
             var m = NewMenu();
             if (it != null && it.Kind == Kind.App)
             {
@@ -2952,12 +3145,43 @@ namespace MacDock
 
         void OnWinWatch(uint ev, IntPtr hwnd)
         {
+            if (hwnd == Interlocked.CompareExchange(ref previewHwnd, IntPtr.Zero, IntPtr.Zero))
+            {
+                uint pid;
+                N.GetWindowThreadProcessId(hwnd, out pid);
+                if (pid == myPid || (pid == 0 && ev == 0x8001)) return;
+            }
+            var card = preview;
+            bool interaction = ev == 0x0004 || ev == 0x0014; // MENUSTART / SWITCHSTART
+            if (card != null && (interaction ||
+                ((ev == 0x8000 || ev == 0x8001 || ev == 0x8003 || ev == 0x0016 || ev == 0x0017)
+                    && card.AffectsSource(hwnd))))
+            {
+                try
+                {
+                    BeginInvoke(new Action(() =>
+                    {
+                        if (preview != card) return;
+                        previewDismissedAt = Cursor.Position;
+                        ClosePreview();
+                        StartAnim();
+                    }));
+                }
+                catch { }
+            }
             if (ev == 0x0003)
             {
                 try
                 {
                     BeginInvoke(new Action(() =>
                     {
+                        if (previewItem != null && (N.GetForegroundWindow() != previewForeground ||
+                            FindOverflow(true) != IntPtr.Zero))
+                        {
+                            previewDismissedAt = Cursor.Position;
+                            ClosePreview();
+                            StartAnim();
+                        }
                         InstallLocHook();
                         if (trayWnd != IntPtr.Zero && hwnd != trayWnd)
                         {
@@ -3062,6 +3286,7 @@ namespace MacDock
 
         void HideForFullscreen()
         {
+            ClosePreview();
             try
             {
                 ControlCenter.CloseIfOpen();
@@ -3096,6 +3321,7 @@ namespace MacDock
         // Esconde el dock deslizandolo hacia abajo (como el "ocultar automaticamente" de Mac).
         void HideDock()
         {
+            ClosePreview();
             peeking = false;
             if (hiddenFull || slideTarget == 1f) return;
             slideTarget = 1f; StartAnim();
@@ -3146,7 +3372,8 @@ namespace MacDock
         {
             if (restored || all.Count == 0) return;
             if (fullApp) return;
-            if (menuOpen || dragging || stackPopup != null) return;
+            if (menuOpen || dragging || stackPopup != null ||
+                (preview != null && preview.IsUnderPointer(Cursor.Position))) return;
             if (cfg.HotCorners && !fullApp) corners.Tick(Screen.PrimaryScreen, bar != null);
             bool hide = fullApp || (cfg.AutoHide && !cfg.ReserveSpace && Covered());
             Point c = Cursor.Position;
@@ -3174,6 +3401,25 @@ namespace MacDock
 
         protected override void WndProc(ref Message m)
         {
+            if (m.Msg == 0x02B1 || m.Msg == 0x02E0 || m.Msg == 0x007E)
+            {
+                previewDismissedAt = Cursor.Position;
+                ClosePreview();
+                if (m.Msg == 0x02E0 && IsHandleCreated && !restored)
+                    BeginInvoke(new Action(() => { UpdateDockScale(); Relayout(); }));
+            }
+            if (m.Msg == 0x0113 && m.WParam.ToInt64() == (long)PreviewTimerId.ToUInt64())
+            {
+                if (previewHover)
+                {
+                    long remaining = previewDeadline - Stopwatch.GetTimestamp();
+                    if (remaining <= 0) ShowPreview();
+                    else if (N.SetTimer(Handle, PreviewTimerId,
+                        (uint)Math.Max(10, (remaining * 1000 + Stopwatch.Frequency - 1) / Stopwatch.Frequency),
+                        IntPtr.Zero) == UIntPtr.Zero) ClosePreview();
+                }
+                return;
+            }
             if (m.Msg == 0x0312 && m.WParam.ToInt32() == 7) { Spotlight.Toggle(light, s); return; }
             if (msgFinder != 0 && m.Msg == msgFinder) { Finder.OpenOrFocus(light, s); return; }
             if (msgSpot != 0 && m.Msg == msgSpot) { Spotlight.Toggle(light, s); return; }
@@ -3298,6 +3544,7 @@ namespace MacDock
         {
             if (restored) return;
             restored = true;
+            ClosePreview();
             try { AnimOpenStop(); } catch { }
             try { slow.Stop(); fast.Stop(); edge.Stop(); } catch { }
             if (winWatchHandler != null) { try { WinWatch.Remove(winWatchHandler); } catch { } winWatchHandler = null; }
@@ -3337,6 +3584,12 @@ namespace MacDock
         {
             SafeRestore();
             base.OnFormClosing(e);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) ClosePreview();
+            base.Dispose(disposing);
         }
     }
 }

@@ -14,6 +14,13 @@ namespace MacDock
     // habilitados los eventos de reactivacion. No pide elevacion ni toca privilegios del token.
     static class PowerActions
     {
+        public static Func<bool> Diag;
+
+        static void LogSuspend(object message)
+        {
+            if (Diag != null && Diag()) Program.Log(message);
+        }
+
         // Devuelve al usuario solo si no se pudo suspender. Nunca apaga, reinicia ni hiberna
         // como alternativa y nunca repite la llamada.
         public static void Suspend()
@@ -21,15 +28,15 @@ namespace MacDock
             DateTime t0 = DateTime.Now;
             bool ok = false;
             try { ok = Application.SetSuspendState(PowerState.Suspend, false, false); }
-            catch (Exception ex) { Program.Log(ex); }
+            catch (Exception ex) { LogSuspend(ex); }
 
             double elapsed = (DateTime.Now - t0).TotalMilliseconds;
-            if (ok) { Program.Log("Suspender: SetSuspendState(Suspend,false,false) ok (" + (int)elapsed + " ms)"); return; }
+            if (ok) { LogSuspend("Suspender: SetSuspendState(Suspend,false,false) ok (" + (int)elapsed + " ms)"); return; }
             // Si el equipo se suspendio y volvio, la llamada puede devolver false despues de un
             // tiempo largo. En ese caso no mostramos un error falso.
-            if (elapsed > 1500) { Program.Log("Suspender: retorno incierto tras " + (int)elapsed + " ms (posible reanudacion)"); return; }
+            if (elapsed > 1500) { LogSuspend("Suspender: retorno incierto tras " + (int)elapsed + " ms (posible reanudacion)"); return; }
 
-            Program.Log("Suspender: SetSuspendState(Suspend,false,false) devolvio false");
+            LogSuspend("Suspender: SetSuspendState(Suspend,false,false) devolvio false");
             try
             {
                 MessageBox.Show(
@@ -38,7 +45,7 @@ namespace MacDock
                     "El equipo sigue encendido: guarda tu trabajo y vuelve a intentarlo.",
                     "MacDock", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-            catch (Exception ex) { Program.Log(ex); }
+            catch (Exception ex) { LogSuspend(ex); }
         }
 
         public static void Restart()

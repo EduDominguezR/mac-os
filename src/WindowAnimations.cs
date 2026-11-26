@@ -39,6 +39,20 @@ namespace MacDock
         public bool AnimVentanas    = false;   // interruptor general (apagado por defecto)
         public bool AnimAbrirScale  = true;    // apertura scale
         public bool AnimMinGenie    = true;    // minimizacion genie
+        public int AnimGenieVel = -1;
+        public int GenieDurationMs
+        {
+            get
+            {
+                switch (AnimGenieVel)
+                {
+                    case 0: return 500;
+                    case 1: return 350;
+                    case 2: return 250;
+                    default: return 290;
+                }
+            }
+        }
         public bool AnimCerrarScale = true;    // cierre scale+fade
         public bool Diagnostico     = false;   // logs temporales del motor
 
@@ -66,6 +80,7 @@ namespace MacDock
 
         // Para Genie: destino en pantalla (centro del icono del dock)
         public Point    GenieTarget;
+        public int      GenieDurationMs;
 
         // Overlay y bitmap de la animacion
         public AnimOverlay Overlay;
@@ -277,7 +292,6 @@ namespace MacDock
 
         // Duraciones de las animaciones (ms)
         const double DUR_OPEN  = 200.0;
-        const double DUR_GENIE = 290.0;
         const double DUR_CLOSE = 160.0;
 
         // Parametros de apertura
@@ -298,6 +312,7 @@ namespace MacDock
         static WindowAnimationConfig _cfg = new WindowAnimationConfig();
         static readonly List<AnimState> _active = new List<AnimState>(MAX_CONCURRENT);
         static System.Windows.Forms.Timer _timer;
+        static readonly HashSet<System.Windows.Forms.Timer> _deferredTimers = new HashSet<System.Windows.Forms.Timer>();
         static Control _uiControl;   // cualquier control del hilo de UI para BeginInvoke
 
         // ----- Cache de captura de la ventana de primer plano -----
@@ -324,9 +339,9 @@ namespace MacDock
 
         // Thread de captura: solo existe mientras AnimVentanas esta activo.
         static Thread _captureThread;
-        static volatile bool _captureStop;
-        static int _captureGen;                       // invalida hilos antiguos al reiniciar
-        static readonly AutoResetEvent _captureRequest = new AutoResetEvent(false);
+        static volatile int _captureGen;
+        static AutoResetEvent _captureRequest;
+        static int _captureWorkers;
         static IntPtr _captureTarget;                 // peticion puntual (show/location)
         static IntPtr _foreground;                    // ultima ventana en primer plano
         static bool   _fgEligible;                    // elegibilidad cacheada de _foreground
@@ -352,12 +367,17 @@ namespace MacDock
 
         public static void ApplyConfig(WindowAnimationConfig cfg)
         {
-            lock (_lock) { _cfg = cfg; }
+            lock (_lock)
+            {
+                _cfg = cfg;
+                if (!NeedsForegroundSnapshot(cfg) && cfg.AnimVentanas) DropSnapshot();
+            }
             if (cfg.AnimVentanas)
             {
+                StartCaptureThread();
                 // Sembrar el primer plano actual para no depender de un cambio de ventana.
                 IntPtr fg = N.GetForegroundWindow();
-                if (fg != IntPtr.Zero)
+                if (fg != IntPtr.Zero && NeedsForegroundSnapshot(cfg))
                 {
                     _foreground = fg;
                     _fgEligible = false;
@@ -365,8 +385,7 @@ namespace MacDock
                     try { _fgEligible = EvaluateWindow(fg).Eligible; } catch { }
                     if (_fgEligible) RequestCapture(fg);
                 }
-                StartCaptureThread();
-                _captureRequest.Set();     // fuerza una primera evaluacion
+                WakeCapture();
             }
             else
             {
@@ -374,6 +393,7 @@ namespace MacDock
                 CancelAll();
                 lock (_lock) { DropSnapshot(); _foreground = IntPtr.Zero; _fgEligible = false; }
             }
+            LogLifecycle("config");
         }
 
         public static void Shutdown()
@@ -381,6 +401,23 @@ namespace MacDock
             CancelAll();
             StopCaptureThread();
             lock (_lock) { DropSnapshot(); _foreground = IntPtr.Zero; _fgEligible = false; }
+            LogLifecycle("cierre");
+        }
+
+        static void LogLifecycle(string action)
+        {
+            if (!_cfg.Diagnostico) return;
+            lock (_lock)
+            {
+                Program.Log("Anim: " + action + " hiloCaptura=" + _captureWorkers +
+                    " timers=" + ((_timer != null ? 1 : 0) + _deferredTimers.Count) +
+                    " snapshot=" + (_snapBmp != null ? 1 : 0) + " overlays=" + (_active.Count + _pendingClose.Count));
+            }
+        }
+
+        static bool NeedsForegroundSnapshot(WindowAnimationConfig cfg)
+        {
+            return cfg.GenieEnabled || cfg.CerrarEnabled;
         }
 
         // -------------------------------------------------------------------------
@@ -433,14 +470,14 @@ namespace MacDock
         }
 
         // -------------------------------------------------------------------------
-        // Captura de ventana de primer plano: bajo demanda, sin sondeo permanente.
+        // Primer plano y cambios de geometria adelantan el refresco periodico.
         // -------------------------------------------------------------------------
         public static void OnForegroundChanged(IntPtr hwnd)
         {
             _foreground = hwnd;
             _fgEligible = false;
             _fgRetries  = 0;
-            if (hwnd != IntPtr.Zero && _cfg.AnimVentanas)
+            if (hwnd != IntPtr.Zero && NeedsForegroundSnapshot(_cfg))
             {
                 WinMeta m = null;
                 try { m = EvaluateWindow(hwnd); } catch { }
@@ -450,13 +487,13 @@ namespace MacDock
                                 " elegible=" + _fgEligible + " motivo=" + (m != null ? m.Reason : "?"));
                 if (_fgEligible) RequestCapture(hwnd);
             }
-            _captureRequest.Set();     // despierta aunque no sea elegible (para dormir sin plazo)
+            WakeCapture();
         }
 
         // Cambio de posicion/tamano de una ventana (EVENT_OBJECT_LOCATIONCHANGE).
         public static void OnLocationChanged(IntPtr hwnd)
         {
-            if (!_cfg.AnimVentanas) return;
+            if (!NeedsForegroundSnapshot(_cfg)) return;
             if (hwnd == IntPtr.Zero || hwnd != _foreground || !_fgEligible) return;
             RequestCapture(hwnd);
         }
@@ -464,52 +501,83 @@ namespace MacDock
         static void RequestCapture(IntPtr hwnd)
         {
             if (hwnd == IntPtr.Zero) return;
-            _captureTarget = hwnd;
-            _captureRequest.Set();
+            lock (_lock)
+            {
+                if (_captureRequest == null) return;
+                _captureTarget = hwnd;
+                _captureRequest.Set();
+            }
+        }
+
+        static void WakeCapture()
+        {
+            lock (_lock) { if (_captureRequest != null) _captureRequest.Set(); }
         }
 
         static void StartCaptureThread()
         {
-            if (_captureThread != null && _captureThread.IsAlive) return;
-            int gen = ++_captureGen;
-            _captureStop = false;
-            _captureThread = new Thread(() => CaptureLoop(gen))
+            lock (_lock)
             {
-                IsBackground = true,
-                Name         = "MacDock-Capture",
-                Priority     = ThreadPriority.BelowNormal
-            };
-            _captureThread.Start();
+                if (_captureThread != null) return;
+                int gen = ++_captureGen;
+                var signal = new AutoResetEvent(false);
+                _captureRequest = signal;
+                _captureThread = new Thread(() =>
+                {
+                    try { CaptureLoop(gen, signal); }
+                    finally
+                    {
+                        lock (_lock)
+                        {
+                            _captureWorkers--;
+                            if (_captureThread == Thread.CurrentThread)
+                            {
+                                _captureThread = null;
+                                _captureRequest = null;
+                            }
+                            signal.Dispose();
+                        }
+                        LogLifecycle("hilo terminado");
+                    }
+                }) { IsBackground = true, Name = "MacDock-Capture", Priority = ThreadPriority.BelowNormal };
+                _captureWorkers++;
+                _captureThread.Start();
+            }
         }
 
         static void StopCaptureThread()
         {
-            _captureGen++;             // invalida cualquier hilo anterior
-            _captureStop = true;
-            _captureRequest.Set();
-            _captureThread = null;
+            lock (_lock)
+            {
+                _captureGen++;
+                _captureTarget = IntPtr.Zero;
+                if (_captureRequest != null) _captureRequest.Set();
+                _captureRequest = null;
+                _captureThread = null;
+            }
         }
 
-        // Bucle con dos estados: si no hay nada que capturar (funcion apagada, sin ventana
-        // elegible, overlay activo) duerme sin plazo; si hay ventana elegible, refresca como
-        // maximo cada SNAP_REFRESH_MS y atiende peticiones puntuales.
-        static void CaptureLoop(int gen)
+        // Una ventana puede cambiar su contenido sin cambiar de posicion o de foco.
+        // Se conserva una copia reciente para los eventos que llegan despues de ocultarla.
+        static void CaptureLoop(int gen, AutoResetEvent signal)
         {
             while (gen == _captureGen)
             {
-                if (_captureStop) break;
-
-                IntPtr target = _captureTarget;
-                if (target != IntPtr.Zero) _captureTarget = IntPtr.Zero;
+                IntPtr target;
+                lock (_lock)
+                {
+                    if (gen != _captureGen) break;
+                    target = _captureTarget;
+                    _captureTarget = IntPtr.Zero;
+                }
 
                 bool active  = _cfg.AnimVentanas;
                 bool overlay = AnyOverlayActive();
-
                 if (target != IntPtr.Zero && active && !overlay)
                 {
                     bool ok = false;
-                    try { ok = CaptureWindow(target); } catch { }
-                    if (target == _foreground)
+                    try { ok = CaptureWindow(target, gen); } catch { }
+                    if (gen == _captureGen && target == _foreground)
                     {
                         _lastCaptureAt = DateTime.UtcNow;
                         _fgEligible = ok;
@@ -520,7 +588,7 @@ namespace MacDock
                 int wait = Timeout.Infinite;
                 if (active && overlay)
                     wait = 200;                       // reanudar en cuanto termine el overlay
-                else if (active && _foreground != IntPtr.Zero)
+                else if (NeedsForegroundSnapshot(_cfg) && _foreground != IntPtr.Zero)
                 {
                     if (_fgEligible)
                     {
@@ -529,9 +597,12 @@ namespace MacDock
                                     : (int)(DateTime.UtcNow - _lastCaptureAt).TotalMilliseconds;
                         if (since >= (int)SNAP_REFRESH_MS)
                         {
-                            // Refresco de la ventana en primer plano: como maximo 2 por segundo.
-                            _captureTarget = _foreground;
-                            _captureRequest.Set();
+                            // El refresco periodico de la ventana usa SNAP_REFRESH_MS.
+                            lock (_lock)
+                            {
+                                if (gen != _captureGen) break;
+                                if (_captureTarget == IntPtr.Zero) _captureTarget = _foreground;
+                            }
                             continue;
                         }
                         wait = Math.Max(10, (int)SNAP_REFRESH_MS - since);
@@ -541,16 +612,20 @@ namespace MacDock
                         // La ventana pudo no estar lista al llegar el evento (sin tamano, sin
                         // mostrar): se reintenta unas pocas veces y luego se duerme sin plazo.
                         _fgRetries++;
-                        _captureTarget = _foreground;
+                        lock (_lock)
+                        {
+                            if (gen != _captureGen) break;
+                            if (_captureTarget == IntPtr.Zero) _captureTarget = _foreground;
+                        }
                         wait = 500;
                     }
                 }
 
-                _captureRequest.WaitOne(wait);
+                signal.WaitOne(wait);
             }
         }
 
-        static bool CaptureWindow(IntPtr hwnd)
+        static bool CaptureWindow(IntPtr hwnd, int gen)
         {
             if (!N.IsWindow(hwnd) || !N.IsWindowVisible(hwnd) || N.IsIconic(hwnd)) return false;
 
@@ -666,6 +741,11 @@ namespace MacDock
 
             lock (_lock)
             {
+                if (gen != _captureGen || !_cfg.AnimVentanas || !N.IsWindow(hwnd) || N.IsIconic(hwnd))
+                {
+                    bmp.Dispose();
+                    return false;
+                }
                 DropSnapshot();
                 _snapHwnd   = hwnd;
                 _snapPid    = pid;
@@ -769,17 +849,7 @@ namespace MacDock
 
             var hwndCopy = hwnd;
             var pidCopy  = pid;
-            uiCtl.BeginInvoke(new Action(() =>
-            {
-                // Dar tiempo a la captura (doble tick ~32 ms desde el evento)
-                var t = new System.Windows.Forms.Timer { Interval = 60 };
-                t.Tick += (s, e) =>
-                {
-                    t.Stop(); t.Dispose();
-                    LaunchOpenAnim(hwndCopy, pidCopy);
-                };
-                t.Start();
-            }));
+            ScheduleOnce(60, () => LaunchOpenAnim(hwndCopy, pidCopy));
         }
 
         static void HandleRestored(IntPtr hwnd)
@@ -796,12 +866,7 @@ namespace MacDock
             var uiCtl = _uiControl;
             if (uiCtl == null || uiCtl.IsDisposed) return;
             var hwndCopy = hwnd; var pidCopy = pid;
-            uiCtl.BeginInvoke(new Action(() =>
-            {
-                var t = new System.Windows.Forms.Timer { Interval = 60 };
-                t.Tick += (s2, e2) => { t.Stop(); t.Dispose(); LaunchOpenAnim(hwndCopy, pidCopy); };
-                t.Start();
-            }));
+            ScheduleOnce(60, () => LaunchOpenAnim(hwndCopy, pidCopy));
         }
 
         static void LaunchOpenAnim(IntPtr hwnd, uint pid)
@@ -888,6 +953,7 @@ namespace MacDock
                 Pid         = pid,
                 Generation  = GetOrBumpGen(hwnd),
                 Kind        = AnimKind.Genie,
+                GenieDurationMs = _cfg.GenieDurationMs,
                 Clock       = Stopwatch.StartNew(),
                 OrigBounds  = origBounds,
                 GenieTarget = iconCenter.Value,
@@ -921,14 +987,10 @@ namespace MacDock
             ConsolidatePending();
             if (_cfg.Diagnostico) Program.Log("Anim: cierre pendiente hwnd=" + hwnd + " overlay=" + (pc.Overlay != null));
 
-            // Confirmar a los 80 ms si sigue oculta y no fue una minimizacion.
-            var t = new System.Windows.Forms.Timer { Interval = PENDING_CLOSE_MS };
-            t.Tick += (s2, e2) =>
+            ScheduleOnce(PENDING_CLOSE_MS, () =>
             {
-                t.Stop(); t.Dispose();
-                ConfirmClose(hwnd, false);
-            };
-            t.Start();
+                if (AlreadyPendingClose(hwnd)) ConfirmClose(hwnd, false);
+            });
         }
 
         static void HandleDestroy(IntPtr hwnd)
@@ -1106,15 +1168,23 @@ namespace MacDock
         // -------------------------------------------------------------------------
         static void EnsureTimer()
         {
-            var uiCtl = _uiControl;
-            if (uiCtl == null || uiCtl.IsDisposed) return;
-            uiCtl.BeginInvoke(new Action(() =>
+            if (!_cfg.AnimVentanas || _timer != null) return;
+            _timer = new System.Windows.Forms.Timer { Interval = TIMER_INTERVAL_MS };
+            _timer.Tick += OnTick;
+            _timer.Start();
+        }
+
+        static void ScheduleOnce(int interval, Action action)
+        {
+            var timer = new System.Windows.Forms.Timer { Interval = interval };
+            _deferredTimers.Add(timer);
+            timer.Tick += (s, e) =>
             {
-                if (_timer != null) return;
-                _timer = new System.Windows.Forms.Timer { Interval = TIMER_INTERVAL_MS };
-                _timer.Tick += OnTick;
-                _timer.Start();
-            }));
+                if (!_deferredTimers.Remove(timer)) return;
+                timer.Dispose();
+                action();
+            };
+            timer.Start();
         }
 
         static void OnTick(object sender, EventArgs e)
@@ -1220,11 +1290,17 @@ namespace MacDock
         // ---- Minimizacion Genie ----
         static void TickGenie(AnimState st, double elapsed)
         {
-            if (elapsed >= DUR_GENIE) { st.Finished = true; return; }
+            if (elapsed >= st.GenieDurationMs)
+            {
+                st.Finished = true;
+                if (_cfg.Diagnostico) Program.Log("Anim: Genie objetivo=" + st.GenieDurationMs +
+                    " ms, Stopwatch=" + st.Clock.ElapsedMilliseconds + " ms");
+                return;
+            }
             if (st.Overlay == null || st.Overlay.IsDisposed) { st.Finished = true; return; }
             if (st.Snapshot == null) { st.Finished = true; return; }
 
-            float t    = (float)(elapsed / DUR_GENIE);
+            float t    = (float)(elapsed / st.GenieDurationMs);
             float ease = EaseInOut(t);
 
             byte alpha = t < 0.8f ? (byte)255 : (byte)(255 * (1f - (t - 0.8f) / 0.2f));
@@ -1458,10 +1534,16 @@ namespace MacDock
 
         static void CancelAll()
         {
+            if (_timer != null) { _timer.Dispose(); _timer = null; }
+            foreach (var timer in _deferredTimers) timer.Dispose();
+            _deferredTimers.Clear();
+            List<AnimState> active;
             lock (_lock)
             {
-                foreach (var st in _active) st.Finished = true;
+                active = new List<AnimState>(_active);
+                _active.Clear();
             }
+            foreach (var st in active) st.Dispose();
             List<IntPtr> pending;
             lock (_lock) { pending = new List<IntPtr>(_pendingClose.Keys); }
             foreach (var h in pending) CancelPendingClose(h);

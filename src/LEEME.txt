@@ -11,6 +11,7 @@ QUE INCLUYE ESTE INSTALADOR (un solo programa, ~16-20 MB de RAM en reposo)
    - Pilas: carpeta azul = Escritorio (por tipo), Descargas (por fecha). Escribe para buscar.
      Arrastra cualquier archivo de la pila a una carpeta, al navegador, WhatsApp, correo...
    - Clic derecho: ventanas abiertas, quitar/mantener, opciones, apagar Docker y WSL.
+   - Clic derecho > Opciones del dock > Animaciones de ventanas > Vista previa al pasar el raton: solo aparece sobre apps en ejecucion.
 
 2. BARRA SUPERIOR ESTILO MAC (opcion 21 del menu de ajustes)
    - Logo: Inicio, Configuracion, Administrador de tareas, Suspender, Reiniciar, Apagar.

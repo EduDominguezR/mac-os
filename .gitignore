@@ -1,0 +1,7 @@
+/build/
+/dist/
+/Releases/
+*.log
+modenginecrash.log
+/Entrega/
+*.zip
