@@ -6,7 +6,7 @@
  
 Dock con lupa · Vista previa de ventanas · Animaciones de apertura, Genie y cierre · Barra superior que se oculta · Finder · Spotlight · Quick Look · Más batería
  
-~**34 MB de RAM privada** en reposo · CPU casi nula en reposo · Sin administrador · 100 % reversible
+~**25 MB de RAM privada** en reposo · CPU casi nula en reposo · Sin administrador · 100 % reversible
  
 [**⬇️ Descargar el instalador**](Releases/MacDock-Instalador.zip) · [¿Qué hace?](#qué-incluye) · [Novedades](#novedades) · [Instalar](#instalación) · [Desinstalar](#desinstalar) · [Preguntas](#preguntas-frecuentes)
  
